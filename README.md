@@ -28,7 +28,7 @@ PGPASSWORD=$PGBENCH_PASSWORD psql -h $PGBENCH_HOST -p $PGBENCH_PORT -U $PGBENCH_
 ### c. pgbench テストデータの初期化
 
 pgbench のデフォルトテストデータをデータベースに初期化します 。
-
+ß
 `-s 1000` は約15GBのデータを生成します 。
 
 ```Bash
@@ -134,149 +134,20 @@ EOF
 pgbench は PostgreSQL データベースのベンチマークツールですが、ここではカスタムスクリプトを使用して多様なワークロードをシミュレートしています 。
 
 ### カスタムSQLスクリプトの準備
-以下の内容で、pgbench が実行される EC2 インスタンスの `/home/ec2-user/scripts/` ディレクトリに各 .sql ファイルを作成します。ファイルは手動で入力することを強く推奨します。
-
+以下の内容で、pgbench が実行される EC2 インスタンスの `/home/ec2-user/scripts/` ディレクトリに各 .sql ファイルを作成します。
 
 * frequent_select_completed.sql
-
-```SQL
-\set customer_id random(1, 1000000)
-SELECT order_id, order_date, total_amount, status FROM orders WHERE customer_id = :customer_id AND status = 'Completed';
-```
-
 * frequent_select_pending.sql
-
-```SQL
-\set customer_id random(1, 1000000)
-SELECT order_id, order_date, total_amount, status FROM orders WHERE customer_id = :customer_id AND status = 'Pending';
-```
-
 * frequent_select_shipped.sql
-
-```SQL
-\set customer_id random(1, 1000000)
-SELECT order_id, order_date, total_amount, status FROM orders WHERE customer_id = :customer_id AND status = 'Shipped';
-```
-
 * heavy_reporting_select_electronics.sql
-
-```SQL
-\set start_date_offset random(0, 364)
-\set end_date_offset random(0, 30)
-SELECT p.category, p.product_name, COUNT(oi.order_item_id) AS total_items_sold, SUM(oi.quantity * oi.unit_price) AS total_revenue
-FROM products p
-JOIN order_items oi ON p.product_id = oi.product_id
-JOIN orders o ON oi.order_id = o.order_id
-WHERE p.category = 'Electronics'
-  AND o.order_date BETWEEN '2024-01-01'::timestamp + (:start_date_offset * INTERVAL '1 day')
-  AND '2024-01-01'::timestamp + ((:start_date_offset + :end_date_offset) * INTERVAL '1 day')
-GROUP BY p.category, p.product_name
-ORDER BY total_items_sold DESC
-LIMIT 100;
-```
-
 * heavy_reporting_select_books.sql
-
-```SQL
-\set start_date_offset random(0, 364)
-\set end_date_offset random(0, 30)
-SELECT p.category, p.product_name, COUNT(oi.order_item_id) AS total_items_sold, SUM(oi.quantity * oi.unit_price) AS total_revenue
-FROM products p
-JOIN order_items oi ON p.product_id = oi.product_id
-JOIN orders o ON oi.order_id = o.order_id
-WHERE p.category = 'Books'
-  AND o.order_date BETWEEN '2024-01-01'::timestamp + (:start_date_offset * INTERVAL '1 day')
-  AND '2024-01-01'::timestamp + ((:start_date_offset + :end_date_offset) * INTERVAL '1 day')
-GROUP BY p.category, p.product_name
-ORDER BY total_items_sold DESC
-LIMIT 100;
-```
-
 * heavy_reporting_select_clothing.sql
-
-```SQL
-\set start_date_offset random(0, 364)
-\set end_date_offset random(0, 30)
-SELECT p.category, p.product_name, COUNT(oi.order_item_id) AS total_items_sold, SUM(oi.quantity * oi.unit_price) AS total_revenue
-FROM products p
-JOIN order_items oi ON p.product_id = oi.product_id
-JOIN orders o ON oi.order_id = o.order_id
-WHERE p.category = 'Clothing'
-  AND o.order_date BETWEEN '2024-01-01'::timestamp + (:start_date_offset * INTERVAL '1 day')
-  AND '2024-01-01'::timestamp + ((:start_date_offset + :end_date_offset) * INTERVAL '1 day')
-GROUP BY p.category, p.product_name
-ORDER BY total_items_sold DESC
-LIMIT 100;
-```
-
 * heavy_reporting_select_food.sql
-
-```SQL
-\set start_date_offset random(0, 364)
-\set end_date_offset random(0, 30)
-SELECT p.category, p.product_name, COUNT(oi.order_item_id) AS total_items_sold, SUM(oi.quantity * oi.unit_price) AS total_revenue
-FROM products p
-JOIN order_items oi ON p.product_id = oi.product_id
-JOIN orders o ON oi.order_id = o.order_id
-WHERE p.category = 'Food'
-  AND o.order_date BETWEEN '2024-01-01'::timestamp + (:start_date_offset * INTERVAL '1 day')
-  AND '2024-01-01'::timestamp + ((:start_date_offset + :end_date_offset) * INTERVAL '1 day')
-GROUP BY p.category, p.product_name
-ORDER BY total_items_sold DESC
-LIMIT 100;
-```
-
 * heavy_reporting_select_home_goods.sql
-```SQL
-\set start_date_offset random(0, 364)
-\set end_date_offset random(0, 30)
-SELECT p.category, p.product_name, COUNT(oi.order_item_id) AS total_items_sold, SUM(oi.quantity * oi.unit_price) AS total_revenue
-FROM products p
-JOIN order_items oi ON p.product_id = oi.product_id
-JOIN orders o ON oi.order_id = o.order_id
-WHERE p.category = 'Home Goods'
-  AND o.order_date BETWEEN '2024-01-01'::timestamp + (:start_date_offset * INTERVAL '1 day')
-  AND '2024-01-01'::timestamp + ((:start_date_offset + :end_date_offset) * INTERVAL '1 day')
-GROUP BY p.category, p.product_name
-ORDER BY total_items_sold DESC
-LIMIT 100;
-```
-
 * bulk_insert.sql
-
-```SQL
-\set n_inserts 500
-BEGIN;
-INSERT INTO demo_log_events (event_time, event_type, message, payload)
-SELECT now() + (random() * INTERVAL '30 days'), 'INFO', 'Log message for event' || generate_series(1, :n_inserts), '{}'::jsonb
-FROM generate_series(1, :n_inserts);
-COMMIT;
-```
-
 * bulk_delete.sql
-  
-```SQL
-\set retention_days 7
-BEGIN;
-DELETE FROM demo_log_events WHERE event_time < now() - INTERVAL '7 days';
-COMMIT;
-deadlock_script_a.sql
-SQL
-
-BEGIN;
-UPDATE deadlock_test SET value = value + 10 WHERE id = 1;
-SELECT pg_sleep(0.05);
-UPDATE deadlock_test SET value = value + 10 WHERE id = 2;
-COMMIT;
-deadlock_script_b.sql
-SQL
-
-BEGIN;
-UPDATE deadlock_test SET value = value + 20 WHERE id = 2;
-SELECT pg_sleep(0.05);
-UPDATE deadlock_test SET value = value + 20 WHERE id = 1;
-COMMIT;
-```
+* deadlock_script_a.sql
+* deadlock_script_b.sql
 
 ### 実行コマンドとパラメータ
 

@@ -5,8 +5,8 @@ FROM products p
 JOIN order_items oi ON p.product_id = oi.product_id
 JOIN orders o ON oi.order_id = o.order_id
 WHERE p.category = 'Clothing'
-  AND o.order_date BETWEEN '2024-01-01'::timestamp + (:start_date_offset * INTERVAL '1 day')
-  AND '2024-01-01'::timestamp + ((:start_date_offset + :end_date_offset) * INTERVAL '1 day')
+  AND o.order_date BETWEEN ('2024-01-01'::date + (:start_date_offset::int || ' day')::interval)
+  AND ('2024-01-01'::date + ((:start_date_offset::int + :end_date_offset::int) || ' day')::interval)
 GROUP BY p.category, p.product_name
 ORDER BY total_items_sold DESC
 LIMIT 100;

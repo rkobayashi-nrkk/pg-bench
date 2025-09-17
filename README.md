@@ -134,7 +134,7 @@ EOF
 pgbench は PostgreSQL データベースのベンチマークツールですが、ここではカスタムスクリプトを使用して多様なワークロードをシミュレートしています 。
 
 ### カスタムSQLスクリプトの準備
-pgbench が実行される EC2 インスタンスの `/home/ec2-user/scripts/` ディレクトリにスクリプトをダウンロードします
+pgbench が実行される EC2 インスタンスの `/home/ec2-user/pg-bench/scripts/` ディレクトリにスクリプトをダウンロードします
 
 * frequent_select_completed.sql
 * frequent_select_pending.sql
@@ -151,8 +151,7 @@ pgbench が実行される EC2 インスタンスの `/home/ec2-user/scripts/` �
 * run_pgbench_load.sh
 
  ```bash
- mkdir /home/ec2-user/scripts/
- cd /home/ec2-user/scripts/
+ cd /home/ec2-user/
  git clone https://github.com/rkobayashi-nrkk/pg-bench.git
  ```
 
@@ -201,7 +200,7 @@ pgbench -c 64 -j 4 -T 300 -M prepared \
 作成したスクリプトファイルに実行権限を付与します 。
 
 ```Bash
-chmod +x /home/ec2-user/scripts/run_pgbench_load.sh
+chmod +x /home/ec2-user/pg-bench/scripts/run_pgbench_load.sh
 ```
 
 ### c. Cronジョブの登録
@@ -209,7 +208,7 @@ chmod +x /home/ec2-user/scripts/run_pgbench_load.sh
 crontab -e コマンドを使用して、現在のユーザー（例：ec2-user）の Cron ジョブを編集し、以下の行を追加して保存します 。
 
 ```Bash
-0 * * * * /home/ec2-user/scripts/run_pgbench_load.sh >> /var/log/pgbench_load/cron.log 2>&1
+0 * * * * /home/ec2-user/pg-bench/scripts/run_pgbench_load.sh >> /var/log/pgbench_load/cron.log 2>&1
 ```
 
 * 0 * * * *: **毎日、毎時0分（つまり毎正時）**にジョブを実行します 。
